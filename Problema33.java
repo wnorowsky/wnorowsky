@@ -20,7 +20,7 @@ public class Problema33 extends JFrame {
 	private JSpinner spinner3;
 
 	/**
-	 * Launch the application.
+	 * all programmed in Eclipse in the second semester of the degree
 	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
