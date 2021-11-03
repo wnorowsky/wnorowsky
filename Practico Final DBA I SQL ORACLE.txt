@@ -1,0 +1,227 @@
+
+PRACTICO INTEGRADOR ORACLE DBA I
+
+Wnorowsky, Nicolás
+36447699
+
+EJERCICIO 1
+
+create user nw identified by nw;
+
+EJERCICIO 2
+
+create role practico_integrador;
+grant create table, create session to practico_integrador; -- privilegios de sistema
+grant select on hr.employees to practico_integrador;
+grant select on hr.departments to practico_integrador;
+grant select on hr.locations to practico_integrador;
+grant practico_integrador to nw;
+
+select tablespace_name from dba_tablespaces;
+
+alter user nw
+default tablespace users
+quota unlimited on users;
+
+commit;
+
+EJERCICIO 3
+
+create table employees
+as
+select * from hr.employees;
+
+create table departments
+as
+select * from hr.departments;
+
+create table locations
+as
+select * from hr.locations;
+
+commit;
+
+alter table employees
+modify employee_id primary key;
+
+alter table departments
+modify department_id primary key;
+
+alter table locations
+modify location_id primary key;
+
+
+alter table employees
+drop constraint emp_manager_fk;
+
+alter table employees
+add constraint emp_manager_fk foreign key(manager_id) 
+references employees(employee_id) on delete cascade;
+
+alter table employees
+drop constraint emp_dept_fk;
+
+alter table departments
+add constraint dept_loc_fk foreign key(location_id)
+references locations(location_id) on delete cascade;
+
+commit;
+
+EJERCICIO 4
+
+delete from departments where department_id=80;
+
+EJERCICIO 5
+
+select d.department_name, sum(e.salary)
+from employees e, departments d
+where e.department_id=d.department_id
+group by d.department_name
+union
+select l.city, sum(e.salary)
+from locations l, employees e, departments d
+where e.department_id=d.department_id
+and d.location_id=l.location_id
+group by l.city;
+
+EJERCICIO 6
+
+select count(*) TOTAL,
+sum(decode(department_id, 20, 1)) DPTO_20,
+sum(decode(department_id, 50, 1)) DPTO_50,
+count(*) - sum(decode(department_id, 20, 1)) - sum(decode(department_id, 50, 1)) OTROS
+from employees;
+
+
+EJERCICIO 7
+
+grant select on jobs to nw; -- ejecuto desde el usuario HR
+commit;
+
+-- vuelvo al usuario nw
+
+select e.department_id "N° depto", e.last_name "Apellido",
+h.job_title "Cargo"
+from  employees e, departments d, HR.jobs h
+where d.department_name='Executive'
+and e.department_id=d.department_id
+and e.job_id=h.job_id;
+
+
+EJERCICIO 8
+
+select e.last_name, e.first_name,
+nvl2(d.department_id, d.department_name, 'Dirección') "Departamento"
+from employees e, departments d
+where e.department_id=d.department_id(+)
+order by e.employee_id;
+
+EJERCICIO 9
+
+-- desde el usuario system le puedo grantear al user nw (o al rol practico_integrador ya que solo tiene un usuario), la opcion de crear sinonimos publicos
+
+grant create public synonym to nw;
+commit;
+
+-- luego desde el usuario nw
+
+create public synonym emp_wn for employees;
+
+-- como variante podria directamente crear el sinonimo publico desde el usuario system
+
+create public synonym emp_wn for nw.employees;
+commit;
+
+
+EJERCICIO 10
+
+grant create view to practico_integrador; -- usuario system
+commit;
+
+-- vuelvo al usuario nw
+
+create view vistanw
+as
+select e.last_name, e.first_name, e.salary, d.department_name,
+l.city, l.state_province
+from employees e, departments d, locations l
+where e.department_id=d.department_id(+)
+and d.location_id=l.location_id(+);
+
+grant create synonym to nw; -- usuario system (podria grantear el rol como variante)
+commit;
+
+create synonym vnw for vistanw; -- usuario nw
+
+
+EJERCICIO 11
+
+create index vistanw_idx
+on employees(last_name, first_name);
+
+
+EJERCICIO 12
+
+grant select on vnw to public;
+commit;
+
+EJERCICIO 13
+
+create or replace view vistanw
+as
+select e.last_name, e.first_name, e.salary, d.department_name,
+l.city, l.state_province
+from employees e, departments d, locations l
+where e.department_id=d.department_id(+)
+and d.location_id=l.location_id(+)
+and employee_id in (
+                      	  select manager_id
+                       	  from employees );
+
+
+EJERCICIO 14
+
+create or replace view vistanw
+as
+select e.last_name, e.first_name, e.salary, d.department_name,
+l.city, l.state_province
+from employees e, departments d, locations l
+where e.department_id=d.department_id(+)
+and d.location_id=l.location_id(+)
+and salary > (
+                      select avg(salary)
+                      from employees );
+
+
+EJERCICIO 15
+
+grant select on job_history to nw; -- usuario hr
+commit;
+
+-- de nuevo al usuario nw
+
+select employee_id
+from employees
+minus
+select employee_id
+from hr.job_history;
+
+
+
+EJERCICIO 16
+
+alter table employees
+add (sueldo_promedio number (8,2));
+
+update employees em
+set sueldo_promedio = (
+                    select avg(e1.salary)
+                    from employees e1
+                    group by e1.department_id
+                    having em.department_id=e1.department_id);
+
+
+
+
+
+
