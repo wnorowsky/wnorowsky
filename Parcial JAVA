@@ -54,7 +54,7 @@ public class Lavadora extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-		setTitle("Máquina Lavadora");
+		setTitle("MÃ¡quina Lavadora");
 		
 		JButton botonEncender = new JButton("Encender");
 		botonEncender.addActionListener(new ActionListener() {
